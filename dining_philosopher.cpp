@@ -5,10 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 
-/*
-use the pthread flag with gcc to compile this code
-~$ gcc -pthread dining_philosophers.c -o dining_philosophers
-*/
+
 
 pthread_t *philosophers;
 pthread_mutex_t *forks;
