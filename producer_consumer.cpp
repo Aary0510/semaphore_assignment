@@ -5,15 +5,17 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <semaphore.h>
+#include <bits/stdc++.h>
 
+//#include <semaphore.h>
 
+using namespace std;
 
 
 pthread_t *producers;
 pthread_t *consumers;
 
-sem_t empty_count,fill_count;
+atomic<int> empty_count,fill_count;
 
 int *buffer,buf_pos=-1,buf_len;
 
@@ -33,7 +35,21 @@ void consume(int p,pthread_t self){
 
 }
 
+void sem_wait(atomic<int> *a){
+	while(a<= 0){
+		//do nothing
+	}
+	*a--;
 
+}
+
+void sem_post(atomic<int> *a){
+	*a++;
+}
+
+void sem_init(atomic<int> *a,int b, int c){
+	*a=c;
+}
 void* producer(void *args){
 
 	while(1){
@@ -69,8 +85,7 @@ void* consumer(void *args){
 
 int main(void){
 
-	int i,err;
-
+	int err;
 
 
 	//sem_init(&buf_mutex,0,1);
@@ -87,25 +102,25 @@ int main(void){
 	sem_init(&empty_count,0,buf_len);
 
 
-		err = pthread_create(producers+i,NULL,&producer,NULL);
+		err = pthread_create(producers,NULL,&producer,NULL);
 		if(err != 0){
-			printf("Error creating producer %d: %s\n",i+1,strerror(err));
+			printf("Error creating producer %d: %s\n",1,strerror(err));
 		}else{
-			printf("Successfully created producer %d\n",i+1);
+			printf("Successfully created producer %d\n",1);
 		}
 
 
-		err = pthread_create(consumers+i,NULL,&consumer,NULL);
+		err = pthread_create(consumers,NULL,&consumer,NULL);
 		if(err != 0){
-			printf("Error creating consumer %d: %s\n",i+1,strerror(err));
+			printf("Error creating consumer %d: %s\n",1,strerror(err));
 		}else{
-			printf("Successfully created consumer %d\n",i+1);
+			printf("Successfully created consumer %d\n",1);
 		}
 
 
 
 	pthread_join(*(producers),NULL);
-  pthread_join(*(consumers+i),NULL);
+  pthread_join(*(consumers),NULL);
 
 
 
