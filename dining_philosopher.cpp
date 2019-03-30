@@ -4,79 +4,148 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <bits/stdc++.h>
+#include <semaphore.h>
+
+using namespace std;
+
+
+#define N 5 
+
+#define THINKING 2 
+
+#define HUNGRY 1 
+
+#define EATING 0 
+
+#define LEFT (phl + 4) % N 
+
+#define RIGHT (phl + 1) % N 
+  
+
+int state[N]; 
+
+int phil[N] = { 0, 1, 2, 3, 4 }; 
+  
 
 
 
-pthread_t *philosophers;
-pthread_mutex_t *forks;
+sem_t mutex; 
+sem_t S[N];
 
-int philosophers_count;
+void test(int phl) 
+{ 
+    
+	if (state[phl] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING) {
+ 
+        	state[phl] = EATING; 
 
+        sleep(2); 
 
-void eat(int i){
+        printf("Philosopher %d takes fork %d and %d\n", phl + 1, LEFT + 1, phl + 1);
+ 
+       printf("Philosopher %d is Eating\n", phl + 1);
+ 
+       sem_post(&S[phl]); 
+    
+	} 
 
-	printf("Philosopher %d is eating\n",i+1);
-
-	sleep(1 + rand()%10);
-}
-
-void* philosopher(void* args){
-	int i = 0,first,second;
-	while(!pthread_equal(*(philosophers+i),pthread_self()) && i < philosophers_count){
-		i++;
-	}
-
-	while(1){
-
-		printf("Philosopher %d is thinking\n",i+1);
-
-		sleep(1 + rand()%10);
-
-		first = i;
-		second = (i+1)%philosophers_count;
-
-		pthread_mutex_lock(forks + (first>second?second:first));
-		pthread_mutex_lock(forks + (first<second?second:first));
-		eat(i);
-		pthread_mutex_unlock(forks+first);
-		pthread_mutex_unlock(forks+second);
-	}
-
-	return NULL;
-}
+} 
 
 
-int main(void){
-	int i,err;
 
-	srand(time(NULL));
+void fork_1(int phl) 
+{ 
+    
+	sem_wait(&mutex); 
+    
+	state[phl] = HUNGRY; 
+  
+  	printf("Philosopher %d is Hungry\n", phl + 1);  
+    
+	test(phl);
+ 
+    	sem_post(&mutex); 
 
-	printf("Enter number of philosophers:");
-	scanf("%d",&philosophers_count);
-	philosophers = (pthread_t*) malloc(philosophers_count*sizeof(pthread_t));
-	forks = (pthread_mutex_t*) malloc(philosophers_count*sizeof(pthread_mutex_t));
+   	 sem_wait(&S[phl]); 
 
-	for(i=0;i<philosophers_count;++i)
-		if(pthread_mutex_init(forks+i,NULL) != 0){
-			printf("Failed initializing fork %d\n",i+1);
-			return 1;
-		}
+   	 sleep(1); 
 
-	for(i=0;i<philosophers_count;++i){
-		err = pthread_create(philosophers+i,NULL,&philosopher,NULL);
+} 
+  
 
-		if(err != 0){
-			printf("Error creating philosopher: %s\n",strerror(err));
-		}else{
-			printf("Successfully created philosopher %d\n",i+1);
-		}
-	}
 
-	for(i=0;i<philosophers_count;++i)
-		pthread_join(*(philosophers+i),NULL);
+void fork_2(int phl) 
+{ 
+    
+	sem_wait(&mutex); 
+ 
+   	state[phl] = THINKING; 
 
-	free(philosophers);
-	free(forks);
+    	printf("Philosopher %d putting fork %d and %d down\n", phl + 1, LEFT + 1, phl + 1); 
+
+    	printf("Philosopher %d is thinking\n", phl + 1); 
+    
+	test(LEFT); 
+    
+	test(RIGHT); 
+    
+	sem_post(&mutex); 
+
+} 
+
+ 
+
+void* philospher(void* num) 
+{ 
+    
+	while (1) { 
+       
+	 int* i = num; 
+        
+	sleep(1); 
+        
+	fork_1(*i); 
+        
+	sleep(0); 
+        
+	fork_2(*i); 
+    
+	} 
+
+} 
+  
+
+
+int main() 
+{ 
+   
+ 	int i; 
+    
+	pthread_t thread_id[N]; 
+   
+ 	sem_init(&mutex, 0, 1); 
+    
+	for (i = 0; i < N; i++) 
+      
+  	sem_init(&S[i], 0, 0); 
+
+   
+ 	for (i = 0; i < N; i++) 
+    
+	{
+
+       
+ 		pthread_create(&thread_id[i], NULL, philospher, &phil[i]); 
+     
+   		printf("Philosopher %d is thinking\n", i + 1); 
+    
+    
+	} 
+ 
+   	for (i = 0; i < N; i++) 
+        
+		pthread_join(thread_id[i], NULL); 
 
 	return 0;
-}
+} 
